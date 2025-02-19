@@ -3,9 +3,9 @@
 
 
 ## Overview
-Bellabeat is a health-focused tech company specializing in fitness products for women founded by Urška Sršen in 2013. They sell a variety of fitness trackers meant for gathering information on the wearers' activity, sleep and stress. Their main products include the leaf tracker, a stylish wellness tracker that can be worn as a bracelet, necklace or clip; Time, a wellness tracker tha takes the look of a classic time piece; and the Bellabeat App, a smartphone app that houses all of the trackers data and helps the user better understand their current habits so they can make better, healthier decisions.
+Bellabeat is a health-focused tech company specializing in fitness products for women founded by Urška Sršen in 2013. They sell a variety of fitness trackers meant for gathering information on the wearers' activity, sleep and stress. Their main products include the leaf tracker, a stylish wellness tracker that can be worn as a bracelet, necklace or clip; Time, a wellness tracker that takes the look of a classic time piece; and the Bellabeat App, a smartphone app that houses all of the trackers data and helps the user better understand their current habits so they can make better, healthier decisions.
 
-Sršen has tasked our team with analyzing smart device usage data so that we can provide insight on how consumers our using non-Bellabeat smart devices. We will analyize the data provided and produce insights that will help the Bellabeat marketing strategy. 
+Sršen has tasked our team with analyzing smart device usage data so that we can provide insight on how consumers are using non-Bellabeat smart devices. We will analyze the data provided and produce insights that will help the Bellabeat marketing strategy. 
 ## Ask
     
 **Business Task:** Analyze the data provided and produce insights into smart device usages to the marketing team at Bellabeat that will help the company grow on the international stage. 
@@ -16,7 +16,7 @@ Urška Sršen: Cofounder and Chief Creative Officer
 
 Sando Mur: Cofounder, Mathematician and key member of Bellabeat's executive team.
 
-Bellabeat's Marking Team
+Bellabeat's Marketing Team
 
 ##  Prepare
 
@@ -28,24 +28,24 @@ The data provided shows the activity, heart rate and sleep of thirty participant
 
 **Original:** The data was taken directly from the fitbit trackers of the participants.
 
-**Comprehensive:** The data contains information on the participants step count, calories burned, weight and sleep monitoring, given in daily, hourly and minute breakdowns. This data corresponds to activity and sleep, which can give insights into the participants usage habbits but the sample size is small and the data is some what inconsistent.
+**Comprehensive:** The data contains information on the participants step count, calories burned, weight and sleep monitoring, given in daily, hourly and minute breakdowns. This data corresponds to activity and sleep, which can give insights into the participants usage habbits but the sample size is small and the data is somewhat inconsistent.
 
-**Current:** The dataset is from March 2016 to May 2016. This data is old, not current. Usage habbits might have changed.
+**Current:** Since this dataset is from 2016, user habits may have changed, potentially affecting the relevance of the insights.
 
 **Cited:** Unclear
 
 #
-The data is broken down in two different sets, one from March to April and the other from April to May. The March to April dataset does not contain data on participants sleep. Data on participants sleep is important in order to give a complete report to the martketing team, so that means we will focus on the dataset from April to May.
+The data is broken down in two different sets, one from March to April and the other from April to May. The March to April dataset does not contain data on participants sleep. Data on participants sleep is important in order to give a complete report to the marketing team, so that means we will focus on the dataset from April to May.
 
 This dataset contains 18 CSV files. The wide formatted files dailyActivity, sleepDay, and weightLogInfo will be focused on, as they give a plethora of information on the participants activity, sleep and usage of smart devices. 
 
-There are some issues with the data. The dataset contains 30 participants, meaning its at the minimum requirements for a sample size. A data set with 20 to 30 more participants would be more ideal. Out of the 30 participants, only 24 participants monitored their sleep and only 8 recorded their weights. These sample sizes might be too small to extrapolate meaningful data from. There is also no data on the gender and age of the participants. The former being more important due to Bellabeat's focus on creating products for women. 
+There are some issues with the data. While the dataset includes only 30 participants, which is on the lower end for statistical robustness, the trends observed can still offer valuable insights into user behaviors. However, future studies should aim to include at least 50-60 participants for stronger conclusions. Out of the 30 participants, only 24 participants monitored their sleep and only 8 recorded their weights. These sample sizes might be too small to extrapolate meaningful data from. There is also no data on the gender and age of the participants. The former being more important due to Bellabeat's focus on creating products for women. 
 
 ## Process
 
 Our team will be using R and Tableau during this analysis. R will be used to examine, combine and clean the data and it will be used in conjugation with Tableau to showcase the resulting datasets using different visualizations. 
 
-We will clean the data first. This includes formatting the data properly, and cleaning the data, such as removing any duplicate entries and checking for any errors. After a short glance at the datasets, it appears that the "Fat" column contains multiple NA responses. This will not interfer with our analysis so we will leave the column as is. The rest of the cleaning process will be documented in a R Markdown file. 
+We will clean the data first. This includes formatting the data properly, and cleaning the data, such as removing any duplicate entries and checking for any errors. After a short glance at the datasets, it appears that the "Fat" column contains multiple NA responses. This will not interfere with our analysis so we will leave the column as is. The rest of the cleaning process will be documented in a R Markdown file. 
 
 ## Analysis
 
@@ -68,7 +68,7 @@ The participants burned about 2304 calories and took about 7638 steps daily. Acc
 The average calories burned in our data set then falls within healthy ranges for men, but outside healthy ranges for women. The CDC also recommends 10000 steps daily for all adults. We can definitely say that the average steps taken by the participants fall short of the recommended amount.
 The combination of fewer steps on average and a higher average of calories burned could mean that the average participant in this survey is overweight, but without data on the participants age and gender we can't know for certain.
 
-Factoring in the information about the particpants' weights, we see that the average weight is 158lb with an average BMI of 25 (overweight).
+Among participants who logged weight data, the average weight is 158 lbs, with an average BMI of 25, which falls in the overweight category.
 We found in our analysis before that only 8 individuals out of the 30 total marked down information about their weight.
 This means that it would be more accurate to say that the individuals who tracked their weight were on average over-weight. 
 #
@@ -77,7 +77,7 @@ Let's look at how often and when the participants logged their activity data.
 
 ![Sheet 4](https://github.com/user-attachments/assets/197873dd-7c15-4627-be4b-d7dfc3b2a2f9)
 
-From this chart we see that the total minutes tracked is much higher from Tuesday to Thursday. Participants in the survey tracked their activities much more on these days than any other. This is most likely due to less active participants, who might not have regular exercise routines, deciding to make healthier choices on these days. Looking at the averages tells a different story. Let's take a look at the average calories burned broken down by weekday.
+The chart indicates that participants tracked more activity minutes between Tuesday and Thursday compared to other days of the week. Participants in the survey tracked their activities much more on these days than any other. This is most likely due to less active participants, who might not have regular exercise routines, deciding to make healthier choices on these days. Looking at the averages tells a different story. Let's take a look at the average calories burned broken down by weekday.
 
 ![Sheet 3 copy](https://github.com/user-attachments/assets/e335b6b2-8544-4e4f-862e-286ad9246e05)
 
@@ -112,7 +112,7 @@ The data we have on sleep is limited, but still might provide useful information
 ![sleep_plot](https://github.com/user-attachments/assets/a83b6837-efb8-4c44-8ead-73e31e7501b2)
 
 
-What we see from this chart, which was created by plotting the number of days tracked by every Id how how much sleep on average they got per sleep cycle. What we see is that out of the 30 participants, only 3 of them tracked their sleep for the entire 30 days. On average, the participants tracked 17 out of the 30 days. Also, only 24 participants out of the 30 even tracked any days at all. 
+What we see from this chart, which was created by plotting the number of days tracked by every Id how much sleep on average they got per sleep cycle. What we see is that out of the 30 participants, only 3 of them tracked their sleep for the entire 30 days. On average, the participants tracked 17 out of the 30 days. Also, only 24 participants out of the 30 even tracked any days at all. 
 
 We do see a correlation between the amount of days tracked and how much sleep on average the participants got. The more days tracked, the more sleep on average the participants got. Its important to note that the amount of data on sleep that we have might be too small to make any meaningful comments about the data itself, but the lack of data itself can be useful to look into. 
 
@@ -152,7 +152,7 @@ Findings:
 Based on our findings:
 - Tracking devices were most utlitized in the middle of the week. 
 
- Recommendation: Finding a way to promote device usages on the Monday, Friday during the week and entirety of the weekend to promote better overall health of the user but also to gain more fitness tracking data to help out analyses like this in the future. 
+ Recommendation: Since device usage drops on Mondays and Fridays, Bellabeat could introduce in-app challenges or push notifications encouraging engagement on these days. For example, a ‘Monday Motivation’ challenge rewarding users for logging steps could drive increased activity.
 
 - Participants on average performed less than the recommended 10,000 step daily goal. 
 
