@@ -1,0 +1,613 @@
+---
+title: "Bellabeat"
+author: "Paul Hellinger"
+date: "2025-01-22"
+output: pdf_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Prepare the Data:
+
+Download and install packages
+
+```{r}
+install.packages('tidyverse')
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+```
+
+Set working directory and upload files
+
+```{r}
+setwd("~/Desktop/FitBitData")
+activity <- read.csv("dailyActivity_merged4.12-5.12.csv")
+sleep <- read.csv("sleepDay_merged.csv")
+weight <- read.csv("weightLogInfo_merged.csv")
+hourly_steps <- read.csv("hourlySteps_merged.csv")
+hourly_calories <- read.csv("hourlyCalories_merged.csv")
+hourly_intensities <- read.csv("hourlyIntensities_merged.csv")
+```
+
+Review the Data: Take a brief look at the datasets
+
+```{r}
+head(activity)
+head(sleep)
+head(weight)
+head(hourly_steps)
+head(hourly_calories)
+head(hourly_intensities)
+str(activity)
+str(sleep)
+str(weight)
+str(hourly_steps)
+str(hourly_calories)
+str(hourly_intensities)
+```
+
+We see that the top three data sets all have varying column names for
+their dates and they are in different formats.
+
+Clean the Data: Check for any duplicate entries.
+
+```{r}
+# Check for duplicates in activity 
+activity_duplicates <- activity %>% filter(duplicated(.))
+print(activity_duplicates)
+
+# Check for duplicates in sleep 
+sleep_duplicates <- sleep %>% filter(duplicated(.))
+print(sleep_duplicates)
+
+# Check for duplicates in weight 
+weight_duplicates <- weight %>% filter(duplicated(.))
+print(weight_duplicates)
+```
+
+Remove duplicate entries in sleep
+
+```{r}
+# Remove duplicates from sleep
+sleep_clean <- sleep %>% distinct()
+```
+
+Verify data has been cleaned properly:
+
+```{r}
+# Verify that duplicates are removed
+any(duplicated(sleep_clean))    # Should return FALSE
+```
+
+Format the various date columns in activity, sleep_clean and weight to
+proper formats:
+
+```{r}
+# Add Date column to activity and delete ActivityDate
+activity <- activity %>%
+  mutate(Date = as.Date(ActivityDate, format = "%m/%d/%Y")) %>%
+  select(-ActivityDate)
+
+# Add Date column to sleep_clean and delete SleepDay
+sleep_clean <- sleep_clean %>%
+   mutate(Date = as.Date(SleepDay, format = "%m/%d/%Y")) %>%
+  select(-SleepDay)
+
+# Change Date column to proper format
+weight <- weight %>%
+   mutate(Date = as.Date(Date, format = "%m/%d/%Y")) 
+ 
+```
+
+Format date to proper format and remove excess columns for hourly data:
+
+```{r}
+
+# Add Date column and hour column and remove ActivityHour from hourly_steps
+hourly_steps <- hourly_steps %>%
+  mutate(
+    ActivityHour = mdy_hms(ActivityHour),  # Convert to datetime
+    Hour = hour(ActivityHour)             # Extract the hour (0–23 format)
+  ) %>%
+  mutate(
+    Date = as.Date(ActivityHour, format = "%m/%d/%Y")
+  )
+# Remove excess column
+hourly_steps <- hourly_steps %>% select(-ActivityHour)
+
+# Add Date column and hour column and remove ActivityHour from hourly_calories
+hourly_calories <- hourly_calories %>%
+  mutate(
+    ActivityHour = mdy_hms(ActivityHour),  # Convert to datetime
+    Hour = hour(ActivityHour)             # Extract the hour (0–23 format)
+  ) %>%
+  mutate(
+    Date = as.Date(ActivityHour, format = "%m/%d/%Y")
+  )
+# Remove excess column
+hourly_calories <- hourly_calories %>% select(-ActivityHour)
+
+
+# Add Date column and hour column and remove ActivityHour from hourly_intensities
+hourly_intensities <- hourly_intensities %>%
+  mutate(
+    ActivityHour = mdy_hms(ActivityHour),  # Convert to datetime
+    Hour = hour(ActivityHour)             # Extract the hour (0–23 format)
+  ) %>%
+  mutate(
+    Date = as.Date(ActivityHour, format = "%m/%d/%Y")
+  )
+# Remove excess column
+hourly_intensities <- hourly_intensities %>% select(-ActivityHour)
+
+```
+
+Combine datasets:
+
+```{r}
+# Merge two daily data sets and then merge again with the third set
+activitySleep <- activity %>%
+  full_join(sleep_clean, by = c("Id","Date"))
+daily_data <- activitySleep %>%
+  full_join(weight, by = c("Id", "Date"))
+
+# merge hourly data sets
+caloriesSteps <- hourly_calories %>%
+  full_join(hourly_steps, by = c("Id","Date","Hour"))
+hourly_data <- caloriesSteps %>%
+  full_join(hourly_intensities, by = c("Id","Date","Hour"))
+
+```
+
+Adding a column for the day of the week to both sets will be helpful
+when analyzing the data later:
+
+```{r}
+
+# Add Weekday column to daily_data and format them in proper order for plotting later
+daily_data <- daily_data %>%
+  mutate(
+    Weekday = weekdays(Date),  # Add Weekday column
+    Weekday = factor(Weekday, levels = c("Sunday", "Monday", "Tuesday", "Wednesday", 
+                                         "Thursday", "Friday", "Saturday"))  # Specify order
+  )
+
+# Add Weekday column to hourly_data and format them in proper order for plotting later
+hourly_data <- hourly_data %>%
+  mutate(
+    Weekday = weekdays(Date),  # Add Weekday column
+    Weekday = factor(Weekday, levels = c("Sunday", "Monday", "Tuesday", "Wednesday", 
+                                         "Thursday", "Friday", "Saturday"))  # Specify order
+  )
+
+# Add TotalMinutes column. This will be important later for plotting.
+daily_data <- daily_data %>%
+  mutate(TotalMinutes = VeryActiveMinutes + FairlyActiveMinutes + LightlyActiveMinutes + SedentaryMinutes)
+
+
+```
+
+Save the Data:
+
+```{r}
+# Save the two datasets for upload to Tableau later
+write_csv(daily_data, "daily_data.csv") # Save daily_data dataset
+write_csv(hourly_data, "hourly_data.csv") # Save hourly_data dataset
+```
+
+Examine the Data: We are told there are only 30 participants in this
+survey. Lets take a look at the number of unique Ids in the hourly_data
+and daily_data
+
+```{r}
+# Check for the number of unique Ids in hourly_data and daily_data
+n_distinct(hourly_data$Id)
+n_distinct(daily_data$Id)
+```
+
+For both we get a return of 33, 3 more than we were expecting. We
+noticed before while we were briefly looking over the data that the
+datasets sleep_clean and weight contain much few inputs than activity.
+Lets find the unique users in all three sets: activity, sleep_clean and
+weight
+
+```{r}
+# Check for the number of unique Ids in activity, sleep_clean and weight
+n_distinct(activity$Id)
+n_distinct(sleep_clean$Id)
+n_distinct(weight$Id)
+```
+
+We get a return of 33, 24 and 8. This means activity has 3 additional
+unexpected Ids, sleep_clean has 6 fewer Ids and weight has 22 fewer Ids
+than expected. The sleep_clean and weight datasets contain Ids fewer
+than minimum sample sizes, but they can still provide useful insights
+into how the participants were using their trackers and smart devices.
+
+Let's first examine the overall activity of the users with the largest
+scope, meaning let's look at the daily_data. We will break down the data
+by weekday.
+
+```{r}
+
+# Examine the average steps by weekday
+daily_trends <- daily_data %>%
+  group_by(Weekday) %>%
+  summarise(
+    AvgSteps = mean(TotalSteps, na.rm = TRUE),
+    AvgCalories = mean(Calories, na.rm = TRUE),
+    AvgDistance = mean(TotalDistance, na.rm = TRUE)
+  )
+# Plot average steps by weekday
+ggplot(daily_trends, aes(x = Weekday, y = AvgSteps, fill = Weekday)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Average Steps by Weekday", x = "Weekday", y = "Average Steps") +
+  theme_minimal()
+
+# Plot average calories burned by weekday
+ggplot(daily_trends, aes(x = Weekday, y = AvgCalories, fill = Weekday)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Average Calories Burned by Weekday", x = "Weekday", y = "Average Calories") +
+  theme_minimal()
+
+# Plot average distance traveled by weekday
+ggplot(daily_trends, aes(x = Weekday, y = AvgDistance, fill = Weekday)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Average Distance Traveled by Weekday", x = "Weekday", y = "Average Distance") +
+  theme_minimal()
+
+```
+
+We see that the plot for distance traveled and steps correspond 1:1 to
+each other, which is expected. Interestingly, we see that there isn't
+necessarily a relationship between calories burned and steps taken,
+specifically when it comes to Monday and Friday. These days might
+involve exercieses that burn calories but don't correspond with a high
+step count, weight lifting or body resistance exercises for example.
+
+Instead of looking at averages, let's look at totals.
+
+```{r}
+# Aggregate the data by Weekday and calculate the total for steps, distance, and calories
+daily_totals <- daily_data %>%
+  group_by(Weekday) %>%
+  summarise(
+    TotalSteps = sum(TotalSteps, na.rm = TRUE),
+    TotalCalories = sum(Calories, na.rm = TRUE)
+  )
+
+# Plot the totals for each day of the week (you can create one plot per metric or combine them)
+ggplot(daily_totals, aes(x = Weekday)) +
+  geom_bar(aes(y = TotalSteps, fill = "Steps"), stat = "identity", position = "dodge")  +
+  geom_bar(aes(y = TotalCalories, fill = "Calories"), stat = "identity", position = "dodge") +
+  labs(
+    title = "Total Steps and Calories Burned by Weekday",
+    x = "Weekday",
+    y = "Total"
+  ) +
+  scale_fill_manual(values = c("Steps" = "blue", "Calories" = "red")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+This plot shows an interesting over-looked point. The total calories
+burned and steps tracked are largest between tuesday and thursday. We
+should examine the data further to see how often users tracked their
+data and on what days.
+
+```{r}
+# Count the number of days each user inputted data
+user_data_summary <- daily_data %>%
+  group_by(Id) %>%
+  summarise(
+    DaysTracked = n_distinct(Date),  # Count unique dates per user
+    FirstDate = min(Date),          # First date a user inputted data
+    LastDate = max(Date)            # Last date a user inputted data
+  ) 
+
+# Count inputs by weekday
+weekday_summary <- daily_data %>%
+  group_by(Weekday) %>%
+  summarise(
+    Entries = n(),                       # Total number of entries
+  ) %>%
+  arrange(match(Weekday, c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")))
+
+# Plot data
+ggplot(weekday_summary, aes(x = Weekday, y = Entries, fill = Weekday)) +
+  geom_bar(stat = "identity") +
+  labs(
+    title = "Number of Inputs by Weekday",
+    x = "Weekday",
+    y = "Number of Inputs",
+    fill = "Weekday"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+
+The generated plot shows what was expected: there are more inputs during
+the middle of the week from Tuesday to Thursday than any other days of
+the week, thus users are more likely to input data during Tuesday
+through Thursday than other days. Finding a way to promote usage of
+smart devices during the other days of the week will lead to healthier
+lifestlye choices.
+
+We will plot the total calories v the total steps. Each blue dot will represent the totals for a specific Id on a specific date. 
+```{r}
+# Create the scatterplot with trend line
+ggplot(daily_data, aes(x = TotalSteps, y = Calories)) +
+  geom_point(color = "blue") +  # Scatter plot points in blue
+  geom_smooth(method = "lm", color = "red", se = FALSE) +  # Linear trend line in red, without confidence interval
+  labs(
+    title = "Total Calories vs Total Steps",
+    x = "Total Steps",
+    y = "Total Calories"
+  ) +
+  theme_minimal()  # Minimal theme for cleaner look
+```
+There's an expected result: The higher the total steps, the higher the total calories burned.
+
+Now let's change gears and take a look at the sleep_clean data set and
+examine it further:
+
+```{r}
+
+# Add Weekday column
+sleep_clean <- sleep_clean %>%
+  mutate(
+    Weekday = weekdays(Date),
+    Weekday = factor(Weekday, levels = c("Sunday", "Monday", "Tuesday", "Wednesday", 
+                                         "Thursday", "Friday", "Saturday"))  # Specify order
+    )
+
+# Convert to hours 
+sleep_clean <- sleep_clean %>%
+  mutate(
+    TotalHoursAsleep = TotalMinutesAsleep / 60,
+    TotalHoursInBed = TotalTimeInBed / 60
+  )
+
+# Examine how much sleep the participants are having on average
+user_sleep_summary <- sleep_clean %>%
+  group_by(Id) %>%
+  summarize(
+    AvgHoursAsleep = mean(TotalHoursAsleep, na.rm = TRUE),
+    AvgHoursInBed = mean(TotalHoursInBed, na.rm = TRUE),
+    .groups = "drop"
+  )
+print(user_sleep_summary)
+
+# Examine sleeping habits on different days of the week 
+sleep_weekday_summary <- sleep_clean %>%
+  group_by(Weekday) %>%
+  summarize(
+    AvgHoursAsleep = mean(TotalHoursAsleep, na.rm = TRUE),
+    AvgHoursInBed = mean(TotalHoursInBed, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+print(sleep_weekday_summary)
+
+# Calculate how many days each user tracks their sleep
+user_sleep <- sleep_clean %>%
+  group_by(Id) %>%
+  summarize(DaysTracked = n(), .groups = "drop")
+
+print(user_sleep)
+
+# Calculate average DaysTracked
+avg_days_tracked <- user_sleep %>%
+  summarize(AverageDaysTracked = mean(DaysTracked, na.rm = TRUE))
+
+print(avg_days_tracked)
+```
+
+Now that we've created these tables, we'll plot them for further
+insights
+
+```{r}
+
+# Create a plot of the average hours slept by weekday
+ggplot(sleep_weekday_summary, aes(x = Weekday, y = AvgHoursAsleep)) +
+  geom_col(fill = "lightgreen") +
+  labs(
+    title = "Average Hours Slept by Weekday",
+    x = "Day of the Week",
+    y = "Average Hours Asleep"
+  ) +
+  theme_minimal()
+
+```
+
+Let's examine further by combining the data on the number of days
+tracked and averages of the amount of sleep and time in bed for all participants. 
+
+```{r}
+# Combine data sets
+sleep_combined <- user_sleep %>%
+  full_join(user_sleep_summary, by = c("Id"))
+```
+
+Now examine the data to see if there is a relationship between number of
+days tracked and the amount of sleep the users got.
+
+```{r}
+sleep_plot <- ggplot(sleep_combined, aes(x = reorder(Id, -DaysTracked), y = DaysTracked, fill = AvgHoursAsleep)) + ## Reorder Ids from most days tracked to least
+  geom_col() +
+  scale_fill_gradient(low = "lightgreen", high = "darkblue", name = "Avg Hours Asleep") +
+  labs(
+    title = "Days Tracked and Average Hours Asleep by User",
+    x = "User ID",
+    y = "Days Tracked"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+sleep_plot
+
+```
+
+As a whole, we can see that there is a positive relationship between the
+number of days tracked and average hours slept. We also see that on
+average users only inputted 17 days out of the 31 total. We can
+recommend a marketing stratedgy focused on tracking sleep to promote
+healthier sleeping habits.
+
+Now let's take a look at the hourly data.
+
+```{r}
+
+# Find averages per Id and Hour
+hourly_summary <- hourly_data %>%
+  group_by(Id, Hour) %>%
+  summarize(
+    AverageSteps = mean(StepTotal, na.rm = TRUE),
+    AverageCalories = mean(Calories, na.rm = TRUE),
+    AverageIntensity = mean(AverageIntensity, na.rm = TRUE),
+    TotalEntries = n(),  # Count total entries for consistency tracking
+    .groups = "drop"
+  )
+
+# Aggregate hourly_summary data across all users
+hourly_overall_summary <- hourly_summary %>%
+  group_by(Hour) %>%
+  summarize(
+    AvgStepsAllUsers = mean(AverageSteps, na.rm = TRUE),
+    AvgCaloriesAllUsers = mean(AverageCalories, na.rm = TRUE),
+    AvgIntensityAllUsers = mean(AverageIntensity, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Normalize values for easier comparison
+hourly_overall_summary <- hourly_overall_summary %>%
+  mutate(
+    ScaledSteps = AvgStepsAllUsers / max(AvgStepsAllUsers, na.rm = TRUE),
+    ScaledCalories = AvgCaloriesAllUsers / max(AvgCaloriesAllUsers, na.rm = TRUE),
+    ScaledIntensity = AvgIntensityAllUsers / max(AvgIntensityAllUsers, na.rm = TRUE)
+  )
+
+# Plot scaled values for comparison
+library(ggplot2)
+
+ggplot(hourly_overall_summary, aes(x = Hour)) +
+  geom_line(aes(y = ScaledSteps, color = "Steps")) +
+  geom_line(aes(y = ScaledCalories, color = "Calories")) +
+  geom_line(aes(y = ScaledIntensity, color = "Intensity")) +
+  labs(
+    title = "Comparison of Steps, Calories, and Intensity Across All Users (Scaled)",
+    x = "Hour of the Day",
+    y = "Scaled Average Value",
+    color = "Metric"
+  ) +
+  theme_minimal()
+
+```
+
+From the created plot, we see a direct correlation between all three
+averages: steps, intensities, and calories burned. The more steps, the
+higher the intensity and the more calories burned.
+
+
+Now let's aggregate the data so that it factors in days of the week and
+create a heatmap from the data.
+
+```{r}
+
+# Summarize metrics by Weekday and Hour
+hourly_weekday_summary <- hourly_data %>%
+  group_by(Weekday, Hour) %>%
+  summarize(
+    AvgSteps = mean(StepTotal, na.rm = TRUE),
+    AvgCalories = mean(Calories, na.rm = TRUE),
+    AvgIntensity = mean(TotalIntensity, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Heatmap for steps with angled x-axis labels
+ggplot(hourly_weekday_summary, aes(x = Hour, y = Weekday, fill = AvgSteps)) +
+  geom_tile() +
+  scale_fill_viridis_c(option = "magma", name = "Avg Steps") +
+  labs(
+    title = "Average Steps by Hour and Weekday",
+    x = "Hour of the Day",
+    y = "Weekday"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1) # Angled x-axis labels
+  )
+
+```
+
+We see from the heatmap some habits that we would expect: users appear
+to be sleeping in on saturday/sunday and we see a general change in the
+block from 6 am to 8 pm on the weekdays compared to Saturday and Sunday.
+Saturday also appears to generally be more active during the day while
+also being a day the users had more sleep. An unexpected habit is the
+high average step count on Wednesday afternoon between 5 and 7. This
+appears to be the most active time on average for all users. Also,
+saturday afternoon appears to be the second most active time. To promote
+healthier lifestyle habits, Bellabeat marketing team could focus on
+increasing the average step count on Monday and Friday, creating a week
+with more consistent active days.
+
+Now let's examine a bit further, looking at the minute data that we
+have. It is embedded in the daily_data dataset. We added a total minutes
+column earlier so we can see how the different activity levels compare
+to each other.
+
+```{r}
+
+# Add percentage calculation for the legend
+activity_summary <- daily_data %>%
+  summarise(
+    VeryActive = sum(VeryActiveMinutes, na.rm = TRUE),
+    FairlyActive = sum(FairlyActiveMinutes, na.rm = TRUE),
+    LightlyActive = sum(LightlyActiveMinutes, na.rm = TRUE),
+    Sedentary = sum(SedentaryMinutes, na.rm = TRUE)
+  ) %>%
+  pivot_longer(cols = everything(), names_to = "ActivityLevel", values_to = "TotalMinutes") %>%
+  mutate(
+    Percentage = TotalMinutes / sum(TotalMinutes) * 100,
+    Label = paste0(ActivityLevel, " (", round(Percentage, 1), "%)") # Combine label/percentage
+  )
+```
+
+Now plot the data.
+
+```{r}
+# Create the pie chart
+ggplot(activity_summary, aes(x = "", y = TotalMinutes, fill = Label)) +
+  geom_bar(stat = "identity", width = 1, color = "white") + # Add white borders
+  coord_polar("y", start = 0) + # Convert to pie chart
+  labs(
+    title = "Distribution of Activity Levels by Total Minutes",
+    fill = "Activity Level"
+  ) +
+  theme_void() +
+  theme(
+    legend.position = "right", # Move legend to the right
+    legend.title = element_text(face = "bold", size = 12), # Style the legend title
+    legend.text = element_text(size = 10), # Style legend text
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold") # Center the title
+  )
+```
+
+We see out of the total time tracked, around 3 percent of the time can
+be considered very or fairly active. According to the CDC, adults should
+get about 30 minutes a day of moderately intense physical activity. This
+is about 2 percent of the total day. That means that on total, the
+participants are getting around the recommended amount of exercise per
+day. It's interesting to note that VeryActive was slightly larger than
+FairlyActive, which is not expected.
+
